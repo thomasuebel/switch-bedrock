@@ -1,0 +1,69 @@
+name: switch-bedrock
+
+services:
+  geyser:
+    image: ghcr.io/thomasuebel/switch-bedrock:latest
+    container_name: switch-bedrock
+    restart: unless-stopped
+    network_mode: host
+    volumes:
+      - /DATA/AppData/switch-bedrock/config:/app/config
+      - /DATA/AppData/switch-bedrock/geyser:/app/geyser
+    environment:
+      - TZ=UTC
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:5000/api/status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    x-casaos:
+      envs:
+        - container: TZ
+          description:
+            en_us: "Timezone (e.g. Europe/Berlin, America/New_York)"
+      ports:
+        - container: "19132"
+          description:
+            en_us: "GeyserMC — Nintendo Switch connects here (UDP)"
+        - container: "5000"
+          description:
+            en_us: "Web UI — configure your target Java server"
+      volumes:
+        - container: /app/config
+          description:
+            en_us: "GeyserMC configuration (config.yml)"
+        - container: /app/geyser
+          description:
+            en_us: "GeyserMC runtime data and downloaded JAR"
+
+x-casaos:
+  architectures:
+    - amd64
+    - arm64
+  main: geyser
+  store_app_id: switch-bedrock
+  author: thomasuebel
+  developer: GeyserMC
+  category: Games
+  icon: https://geysermc.org/img/geyser.png
+  title:
+    en_us: Switch Bedrock Bridge
+  tagline:
+    en_us: Connect your Nintendo Switch to any Minecraft Java server
+  description:
+    en_us: >-
+      Switch Bedrock Bridge uses GeyserMC to translate between the Bedrock
+      protocol (used by Nintendo Switch) and the Java protocol. Point it at
+      any Java server and your Switch will connect as if it were a Bedrock
+      server. Includes a simple web UI on port 5000 to set the target server
+      address and port.
+  port_map: "5000"
+  scheme: http
+  index: /
+  tips:
+    before_install:
+      en_us: >-
+        After install, open the web UI on port 5000 and enter your Java
+        server's address and port. Your Nintendo Switch will see the bridge
+        as a LAN server automatically.
