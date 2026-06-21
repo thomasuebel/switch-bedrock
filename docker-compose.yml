@@ -2,7 +2,7 @@ name: switch-bedrock
 
 services:
   geyser:
-    image: ghcr.io/thomasuebel/switch-bedrock:latest
+    image: ghcr.io/thomasuebel/switch-bedrock:1.0.0
     container_name: switch-bedrock
     restart: unless-stopped
     network_mode: host
