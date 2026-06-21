@@ -3,6 +3,7 @@
 import subprocess
 from flask import Flask, render_template, request, jsonify
 import config_manager
+import server_info
 import version_manager
 
 DEFAULT_CONFIG = "/app/config/config.yml"
@@ -36,6 +37,8 @@ def create_app(config_path=None, sources_path=None):
 
         # Kill GeyserMC so the entrypoint loop restarts it with new config
         subprocess.run(["pkill", "-f", "Geyser.jar"], check=False)
+        # Drop cached stats — they belong to the previous remote.
+        server_info.clear_cache()
         return jsonify({"status": "ok"})
 
     @app.route("/api/status")
@@ -46,6 +49,11 @@ def create_app(config_path=None, sources_path=None):
         )
         running = result.returncode == 0
         return jsonify({"geyser_running": running})
+
+    @app.route("/api/server-info")
+    def remote_info():
+        remote = config_manager.get_remote_server(app.config["CONFIG_PATH"])
+        return jsonify(server_info.query(remote["address"], remote["port"]))
 
     @app.route("/api/versions")
     def versions():
