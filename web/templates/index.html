@@ -13,6 +13,16 @@
 
         <div id="status" class="status"></div>
 
+        <div class="server-stats" id="server-stats">
+            <div class="server-stats-header">
+                <h2>Java server</h2>
+                <span class="server-checked" id="server-checked"></span>
+            </div>
+            <div class="server-stats-body" id="server-stats-body">
+                <span class="server-line">Loading&hellip;</span>
+            </div>
+        </div>
+
         <div class="versions" id="versions">
             <h2>Versions</h2>
             <div class="version-row" data-project="geyser">
@@ -172,6 +182,64 @@
         });
 
         loadVersions();
+
+        const statsBody = document.getElementById('server-stats-body');
+        const statsChecked = document.getElementById('server-checked');
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+            }[c]));
+        }
+
+        function formatChecked(iso) {
+            if (!iso) return '';
+            try {
+                const d = new Date(iso);
+                return `checked ${d.toLocaleTimeString()}`;
+            } catch {
+                return `checked ${iso}`;
+            }
+        }
+
+        function renderServerInfo(info) {
+            statsChecked.textContent = formatChecked(info.checked_at);
+            const target = `${escapeHtml(info.address)}:${info.port}`;
+            if (!info.online) {
+                statsBody.innerHTML = `
+                    <span class="server-line offline">offline</span>
+                    <span class="server-detail">${target} &mdash; ${escapeHtml(info.error || 'unreachable')}</span>
+                `;
+                return;
+            }
+            const motd = escapeHtml(info.motd || '');
+            const sample = info.players.sample.length
+                ? `<span class="server-detail">${escapeHtml(info.players.sample.join(', '))}</span>`
+                : '';
+            const icon = info.icon
+                ? `<img class="server-icon" src="${info.icon}" alt="">`
+                : '';
+            statsBody.innerHTML = `
+                ${icon}
+                <div class="server-summary">
+                    <span class="server-line online">${target} &mdash; ${info.players.online}/${info.players.max} players &middot; ${escapeHtml(info.version.name)} &middot; ${info.latency_ms} ms</span>
+                    ${motd ? `<span class="server-detail motd">${motd}</span>` : ''}
+                    ${sample}
+                </div>
+            `;
+        }
+
+        function loadServerInfo() {
+            fetch('/api/server-info')
+                .then(r => r.json())
+                .then(renderServerInfo)
+                .catch(() => {
+                    statsBody.innerHTML = '<span class="server-line offline">could not check</span>';
+                });
+        }
+
+        loadServerInfo();
+        setInterval(loadServerInfo, 60_000);
     </script>
 </body>
 </html>
