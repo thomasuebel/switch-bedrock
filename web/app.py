@@ -3,13 +3,18 @@
 import subprocess
 from flask import Flask, render_template, request, jsonify
 import config_manager
+import version_manager
 
 DEFAULT_CONFIG = "/app/config/config.yml"
 
 
-def create_app(config_path=None):
+def create_app(config_path=None, sources_path=None):
     app = Flask(__name__)
     app.config["CONFIG_PATH"] = config_path or DEFAULT_CONFIG
+    app.config["SOURCES_PATH"] = sources_path or version_manager.DEFAULT_SOURCES_PATH
+
+    def _sources():
+        return version_manager.load_sources(app.config["SOURCES_PATH"])
 
     @app.route("/")
     def index():
@@ -41,6 +46,23 @@ def create_app(config_path=None):
         )
         running = result.returncode == 0
         return jsonify({"geyser_running": running})
+
+    @app.route("/api/versions")
+    def versions():
+        return jsonify(version_manager.get_status(_sources()))
+
+    @app.route("/api/update/<project>", methods=["POST"])
+    def update(project):
+        try:
+            meta = version_manager.download(project, _sources())
+        except version_manager.UpdateError as e:
+            return jsonify({"error": str(e)}), 400
+        subprocess.run(["pkill", "-f", "Geyser.jar"], check=False)
+        return jsonify({
+            "status": "ok",
+            "build": meta.get("build"),
+            "version": meta.get("version"),
+        })
 
     return app
 

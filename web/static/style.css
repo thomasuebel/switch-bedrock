@@ -98,6 +98,85 @@ button:hover {
     background: #00b894;
 }
 
+.versions {
+    background: #16213e;
+    padding: 1rem 1.25rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+.versions h2 {
+    font-size: 1rem;
+    color: #00d4aa;
+    margin-bottom: 0.75rem;
+}
+
+.version-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid #1f2a4a;
+}
+
+.version-row:first-of-type {
+    border-top: none;
+    padding-top: 0;
+}
+
+.version-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.version-meta strong {
+    color: #e0e0e0;
+    font-size: 0.95rem;
+}
+
+.version-line {
+    color: #888;
+    font-size: 0.8rem;
+    margin-top: 0.15rem;
+    word-break: break-word;
+}
+
+.version-line a {
+    color: #00d4aa;
+}
+
+.version-note {
+    color: #666;
+    font-size: 0.75rem;
+    font-style: italic;
+    flex-shrink: 0;
+}
+
+.update-btn {
+    width: auto;
+    margin: 0;
+    padding: 0.4rem 0.9rem;
+    font-size: 0.85rem;
+    background: #ffb454;
+    color: #1a1a2e;
+    flex-shrink: 0;
+}
+
+.update-btn:hover {
+    background: #ffa133;
+}
+
+.update-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.update-available .version-line {
+    color: #ffb454;
+}
+
 .instructions {
     background: #16213e;
     padding: 1.5rem;

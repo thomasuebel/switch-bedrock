@@ -13,6 +13,24 @@
 
         <div id="status" class="status"></div>
 
+        <div class="versions" id="versions">
+            <h2>Versions</h2>
+            <div class="version-row" data-project="geyser">
+                <div class="version-meta">
+                    <strong>GeyserMC</strong>
+                    <span class="version-line">Loading&hellip;</span>
+                </div>
+                <button type="button" class="update-btn" data-project="geyser" hidden>Update</button>
+            </div>
+            <div class="version-row" data-project="floodgate">
+                <div class="version-meta">
+                    <strong>Floodgate</strong>
+                    <span class="version-line">Loading&hellip;</span>
+                </div>
+                <span class="version-note">runs on your Java server</span>
+            </div>
+        </div>
+
         <form id="config-form">
             <label for="address">Java Server Address</label>
             <input type="text" id="address" name="address"
@@ -87,6 +105,73 @@
                 }
             })
             .catch(() => {});
+
+        function describe(local, latest) {
+            const localStr = local && local.version ? `v${local.version} (build ${local.build})` : 'unknown';
+            const latestStr = latest && latest.version ? `v${latest.version} (build ${latest.build})` : 'unavailable';
+            return `installed: ${localStr} · latest: ${latestStr}`;
+        }
+
+        function describeRemoteOnly(latest, projectUrl) {
+            const latestStr = latest && latest.version ? `v${latest.version} (build ${latest.build})` : 'unavailable';
+            const link = projectUrl ? ` — <a href="${projectUrl}" target="_blank" rel="noopener">download</a>` : '';
+            return `latest: ${latestStr}${link}`;
+        }
+
+        function renderVersions(data) {
+            for (const project of Object.keys(data)) {
+                const row = document.querySelector(`.version-row[data-project="${project}"]`);
+                if (!row) continue;
+                const line = row.querySelector('.version-line');
+                const btn = row.querySelector('.update-btn');
+                const info = data[project];
+
+                if (info.error) {
+                    line.textContent = `could not check: ${info.error}`;
+                } else if (info.installable) {
+                    line.textContent = describe(info.local, info.latest);
+                } else {
+                    line.innerHTML = describeRemoteOnly(info.latest, info.project_url);
+                }
+
+                if (btn) {
+                    btn.hidden = !info.update_available;
+                }
+                row.classList.toggle('update-available', !!info.update_available);
+            }
+        }
+
+        function loadVersions() {
+            fetch('/api/versions')
+                .then(r => r.json())
+                .then(renderVersions)
+                .catch(() => {});
+        }
+
+        document.querySelectorAll('.update-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const project = btn.dataset.project;
+                btn.disabled = true;
+                btn.textContent = 'Updating…';
+                try {
+                    const res = await fetch(`/api/update/${project}`, {method: 'POST'});
+                    const data = await res.json();
+                    if (res.ok) {
+                        showStatus(`Updated ${project} to v${data.version} (build ${data.build}). Restarting…`, false);
+                        loadVersions();
+                    } else {
+                        showStatus(`Update failed: ${data.error}`, true);
+                    }
+                } catch (err) {
+                    showStatus('Update failed: ' + err.message, true);
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = 'Update';
+                }
+            });
+        });
+
+        loadVersions();
     </script>
 </body>
 </html>

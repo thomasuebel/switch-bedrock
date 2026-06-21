@@ -1,0 +1,10 @@
+geyser:
+  metadata_url: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest
+  download_url: https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone
+  jar_path: /app/geyser/Geyser.jar
+  installable: true
+
+floodgate:
+  metadata_url: https://download.geysermc.org/v2/projects/floodgate/versions/latest/builds/latest
+  project_url: https://geysermc.org/download/floodgate
+  installable: false
