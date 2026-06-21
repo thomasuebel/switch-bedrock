@@ -4,13 +4,16 @@ set -e
 GEYSER_DIR="/app/geyser"
 CONFIG_DIR="/app/config"
 GEYSER_JAR="$GEYSER_DIR/Geyser.jar"
-DOWNLOAD_URL="https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest/downloads/standalone"
+GEYSER_META="$GEYSER_JAR.meta.json"
+METADATA_URL="https://download.geysermc.org/v2/projects/geyser/versions/latest/builds/latest"
+DOWNLOAD_URL="$METADATA_URL/downloads/standalone"
 
 # Download GeyserMC if not present
 if [ ! -f "$GEYSER_JAR" ]; then
     echo "Downloading GeyserMC Standalone..."
     mkdir -p "$GEYSER_DIR"
     wget -q -O "$GEYSER_JAR" "$DOWNLOAD_URL"
+    wget -q -O "$GEYSER_META" "$METADATA_URL" || rm -f "$GEYSER_META"
     echo "Download complete."
 fi
 
