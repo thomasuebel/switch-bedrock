@@ -22,8 +22,22 @@ def config_file(tmp_path):
 
 
 @pytest.fixture
-def client(config_file):
-    app = create_app(config_path=config_file)
+def sources_file(tmp_path):
+    path = tmp_path / "sources.yml"
+    path.write_text(yaml.dump({
+        "geyser": {
+            "metadata_url": "https://example.test/g/meta",
+            "download_url": "https://example.test/g/dl",
+            "jar_path": str(tmp_path / "Geyser.jar"),
+            "installable": True,
+        },
+    }))
+    return str(path)
+
+
+@pytest.fixture
+def client(config_file, sources_file):
+    app = create_app(config_path=config_file, sources_path=sources_file)
     app.config["TESTING"] = True
     with app.test_client() as c:
         yield c
@@ -89,3 +103,35 @@ class TestStatus:
         mock_run.return_value.returncode = 1
         resp = client.get("/api/status")
         assert resp.get_json()["geyser_running"] is False
+
+
+class TestVersions:
+    @patch("app.version_manager.get_status")
+    def test_returns_status(self, mock_status, client):
+        mock_status.return_value = {"geyser": {"update_available": True}}
+        resp = client.get("/api/versions")
+        assert resp.status_code == 200
+        assert resp.get_json()["geyser"]["update_available"] is True
+
+
+class TestUpdate:
+    @patch("app.subprocess.run")
+    @patch("app.version_manager.download")
+    def test_updates_and_restarts(self, mock_download, mock_run, client):
+        mock_download.return_value = {"build": 200, "version": "2.9.6"}
+        resp = client.post("/api/update/geyser")
+        assert resp.status_code == 200
+        body = resp.get_json()
+        assert body["status"] == "ok"
+        assert body["build"] == 200
+        mock_run.assert_called_once_with(["pkill", "-f", "Geyser.jar"], check=False)
+
+    @patch("app.subprocess.run")
+    @patch("app.version_manager.download")
+    def test_does_not_restart_on_failure(self, mock_download, mock_run, client):
+        from version_manager import UpdateError
+        mock_download.side_effect = UpdateError("network broke")
+        resp = client.post("/api/update/geyser")
+        assert resp.status_code == 400
+        assert "network broke" in resp.get_json()["error"]
+        mock_run.assert_not_called()
