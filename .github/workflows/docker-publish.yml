@@ -9,7 +9,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -49,3 +49,25 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Check out master for compose bump
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          path: master-checkout
+
+      - name: Sync docker-compose.yml on master
+        working-directory: master-checkout
+        run: |
+          set -e
+          VERSION="${GITHUB_REF_NAME#v}"
+          sed -i -E "s|^([[:space:]]*image:[[:space:]]*ghcr\.io/thomasuebel/switch-bedrock):[^[:space:]]+\$|\1:${VERSION}|" docker-compose.yml
+          if git diff --quiet docker-compose.yml; then
+            echo "docker-compose.yml already pins ${VERSION} — nothing to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docker-compose.yml
+          git commit -m "Sync docker-compose.yml to v${VERSION} [skip ci]"
+          git push origin master
