@@ -135,3 +135,24 @@ class TestUpdate:
         assert resp.status_code == 400
         assert "network broke" in resp.get_json()["error"]
         mock_run.assert_not_called()
+
+
+class TestServerInfo:
+    @patch("app.server_info.query")
+    def test_returns_query_result_for_configured_remote(self, mock_query, client):
+        mock_query.return_value = {"online": True, "motd": "hi"}
+        resp = client.get("/api/server-info")
+        assert resp.status_code == 200
+        assert resp.get_json() == {"online": True, "motd": "hi"}
+        mock_query.assert_called_once_with("mc.example.com", 25565)
+
+    @patch("app.subprocess.run")
+    @patch("app.server_info.clear_cache")
+    def test_cache_cleared_when_config_changes(self, mock_clear, _mock_run, client):
+        resp = client.post(
+            "/api/config",
+            data=json.dumps({"address": "new.server.com", "port": 25565, "auth_type": "offline"}),
+            content_type="application/json",
+        )
+        assert resp.status_code == 200
+        mock_clear.assert_called_once()

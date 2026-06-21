@@ -1,7 +1,7 @@
 FROM eclipse-temurin:21-jre-alpine
 
 RUN apk add --no-cache python3 py3-pip py3-yaml wget procps \
-    && pip3 install --no-cache-dir --break-system-packages Flask PyYAML
+    && pip3 install --no-cache-dir --break-system-packages Flask PyYAML mcstatus
 
 WORKDIR /app
 
